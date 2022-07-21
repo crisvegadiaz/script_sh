@@ -1,0 +1,27 @@
+#! /bin/sh
+#Colocar en: /usr/bin
+clear
+
+echo "+-------------------------------------+";
+echo "|     LISTA DE ACTUALIZACIONES APT    |" ;
+echo "+-------------------------------------+";
+echo "";
+dnf update $1
+echo "####################################";
+echo "+-----------------------------------------+";
+echo "|     LISTA DE ACTUALIZACIONES FLATPAK    |" ;
+echo "+-----------------------------------------+";
+echo "";
+flatpak update $1
+echo "####################################";
+echo "+-------------------------------------+";
+echo "|     LISTA DE ACTUALIZACIONES SNAP   |" ;
+echo "+-------------------------------------+";
+echo "";
+snap refresh
+echo "####################################";
+echo "";
+echo "";
+
+
+

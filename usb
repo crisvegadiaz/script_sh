@@ -1,0 +1,29 @@
+#!/bin/bash
+#Colocar en: /usr/bin
+echo "-----------------------" 
+echo "|Formatear USB a Fat32|"
+echo "-----------------------" 
+echo "Ver ruta de el pendrive"
+echo "[ENTER]"
+read enterKey;
+sudo lsblk 
+echo -n "Escribir ruta de el pendrive para desmontar EJ(sdb numero):";
+read ruta;
+sudo umount /dev/$ruta
+
+echo -n "Escribir el nombre de USB:";
+read nombre;
+echo -n "Formatos (1)NTFS (2)FAT32 :";
+read opcion;
+case $opcion in
+  1)
+    sudo mkfs.ntfs -f -L $nombre /dev/$ruta
+    ;;
+  2)
+    sudo mkfs.vfat -F 32 -n $nombre /dev/$ruta
+    ;;
+  *)
+    echo "OPCION NO VALIDA"
+    ;;
+esac
+#End Script
