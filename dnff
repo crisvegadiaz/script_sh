@@ -2,7 +2,7 @@
 #Colocar en: /usr/bin
 clear
 echo -e "\e[31m+-------------------------------------+\e[0m"
-echo -e "\e[31m|     LISTA DE ACTUALIZACIONES APT    |\e[0m"
+echo -e "\e[31m|     LISTA DE ACTUALIZACIONES DNF    |\e[0m"
 echo -e "\e[31m+-------------------------------------+\e[0m"
 echo "";
 dnf update $1
