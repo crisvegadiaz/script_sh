@@ -1,29 +1,58 @@
 #!/bin/bash
 #Colocar en: /usr/bin
-echo "-----------------------" 
-echo "|Formatear USB a Fat32|"
-echo "-----------------------" 
-echo "Ver ruta de el pendrive"
-echo "[ENTER]"
+
+#Color de texto
+function texColor(){
+    
+    mensaje="$1"
+    tipo="$2"
+    
+    arry1=(31 32 33 34 35)
+    arry2=('red' 'green' 'yellow' 'blue' 'purple')
+    
+    for (( c=0; c<=${#arry2[@]}; c++ ))
+    do
+        if [[ $tipo == ${arry2[c]} ]]; then
+            echo -en "\e[${arry1[c]}m${mensaje}\e[0m"
+        fi
+    done
+}
+
+#Colocar en: /usr/bin
+texColor "
+█▀▀ █▀█ █▀█ █▀▄▀█ ▄▀█ ▀█▀ █▀▀ ▄▀█ █▀█   █░█ █▀ █▄▄
+█▀░ █▄█ █▀▄ █░▀░█ █▀█ ░█░ ██▄ █▀█ █▀▄   █▄█ ▄█ █▄█
+" blue
+echo ""
+texColor "Ver ruta de el pendrive " yellow
+texColor "[ENTER]" green
 read enterKey;
-sudo lsblk 
-echo -n "Escribir ruta de el pendrive para desmontar EJ(sdb numero):";
+sudo lsblk | grep sd
+texColor "▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ " blue
+echo ""
+echo ""
+
+texColor "Escribir ruta de el pendrive para desmontar EJ(sdb numero): " yellow
 read ruta;
 sudo umount /dev/$ruta
-
-echo -n "Escribir el nombre de USB:";
+texColor "Escribir el nombre de USB: " yellow
 read nombre;
-echo -n "Formatos (1)NTFS (2)FAT32 :";
+
+texColor "Formatos (1)NTFS (2)FAT32: " yellow
 read opcion;
 case $opcion in
-  1)
-    sudo mkfs.ntfs -f -L $nombre /dev/$ruta
+    1)
+        sudo mkfs.ntfs -f -L $nombre /dev/$ruta
+        texColor "✅ Finalizado" green
     ;;
-  2)
-    sudo mkfs.vfat -F 32 -n $nombre /dev/$ruta
+    2)
+        sudo mkfs.vfat -F 32 -n $nombre /dev/$ruta
+        texColor "✅ Finalizado" green
     ;;
-  *)
-    echo "OPCION NO VALIDA"
+    *)
+        texColor "❌ OPCION NO VALIDA" red
     ;;
 esac
+echo ""
+texColor "▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ " blue
 #End Script
