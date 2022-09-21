@@ -1,25 +1,43 @@
 #! /bin/sh
 #Colocar en: /usr/bin
+
+#Color texto
+function texColor(){
+    
+    mensaje="$1"
+    tipo="$2"
+    
+    arry1=(31 32 33 34 35)
+    arry2=('red' 'green' 'yellow' 'blue' 'purple')
+    
+    for (( c=0; c<=${#arry2[@]}; c++ ))
+    do
+        if [[ $tipo == ${arry2[c]} ]]; then
+            echo -e "\e[${arry1[c]}m${mensaje}\e[0m"
+        fi
+    done
+}
+
+# actualizaciones
 clear
-echo -e "\e[31m+-------------------------------------+\e[0m"
-echo -e "\e[31m|     LISTA DE ACTUALIZACIONES DNF    |\e[0m"
-echo -e "\e[31m+-------------------------------------+\e[0m"
+texColor '+-------------------------------------+' red
+texColor '|     LISTA DE ACTUALIZACIONES DNF    |' red
+texColor '+-------------------------------------+' red
 echo "";
 dnf update $1
-echo -e "\e[1;34m<------------------------------------->\e[0m"
-echo -e "\e[31m+-------------------------------------+\e[0m"
-echo -e "\e[31m|   LISTA DE ACTUALIZACIONES FLATPAK  |\e[0m"
-echo -e "\e[31m+-------------------------------------+\e[0m"
+texColor '<------------------------------------->' blue
+texColor '+-------------------------------------+' red
+texColor '|  LISTA DE ACTUALIZACIONES FLATPAK   |' red
+texColor '+-------------------------------------+' red
+
 echo "";
 flatpak update $1
-echo -e "\e[1;34m<------------------------------------->\e[0m"
-echo -e "\e[31m+-------------------------------------+\e[0m"
-echo -e "\e[31m|    LISTA DE ACTUALIZACIONES SNAP    |\e[0m"
-echo -e "\e[31m+-------------------------------------+\e[0m"
+texColor '<------------------------------------->' yellow
+texColor '+-------------------------------------+' red
+texColor '|     LISTA DE ACTUALIZACIONES SNAP   |' red
+texColor '+-------------------------------------+' red
 echo "";
 snap refresh
-echo -e "\e[1;34m<------------------------------------->\e[0m"
+texColor '<------------------------------------->' green
 echo "";
 echo "";
-
-
