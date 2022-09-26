@@ -1,0 +1,73 @@
+#! /bin/bash
+#Colocar en: /usr/bin
+
+# Colores de texto
+function texColor(){
+    
+    mensaje="$1"
+    tipo="$2"
+    
+    arry1=(31 32 33 34 35)
+    arry2=('red' 'green' 'yellow' 'blue' 'purple')
+    
+    for (( c=0; c<=${#arry2[@]}; c++ ))
+    do
+        if [[ $tipo == ${arry2[c]} ]]; then
+            echo -en "\e[${arry1[c]}m${mensaje}\e[0m"
+        fi
+    done
+}
+
+# extracion de archivos
+texColor "____________________\n𝔼𝕤𝕥𝕒𝕔𝕚𝕠́𝕟 𝕕𝕖 𝕒𝕣𝕔𝕙𝕚𝕧𝕠𝕤\n------------------------------" blue
+printf "\n\n"
+
+if [ $# -ne 0 ];
+then
+    case $1 in
+        *.tar.bz2)
+            tar xvjf "$1"
+        ;;
+        *.tar.gz)
+            tar xvzf "$1"
+        ;;
+        *.tar.xz)
+            tar xf "$1"
+        ;;
+        *.bz2)
+            bunzip2 "$1"
+        ;;
+        *.rar)
+            unrar x "$1"
+        ;;
+        *.gz)
+            gunzip "$1"
+        ;;
+        *.tar)
+            tar xvf "$1"
+        ;;
+        *.tbz2)
+            tar xvjf "$1"
+        ;;
+        *.tgz)
+            tar xvzf "$1"
+        ;;
+        *.zip)
+            unzip "$1"
+        ;;
+        *.Z)
+            uncompress "$1"
+        ;;
+        *.7z)
+            7z x "$1"
+        ;;
+        *)
+            texColor "_______________________\n✗ 𝕟𝕠 𝕤𝕖́ 𝕔𝕠́𝕞𝕠 𝕖𝕩𝕥𝕣𝕒𝕖𝕣 ${1}...\n------------------------------" red
+            exit
+            
+        ;;
+    esac
+    texColor "______________\n√ 𝔽𝕚𝕟𝕒𝕝𝕚𝕫𝕒𝕕𝕠\n------------------------------" green
+else
+    texColor "____________________\n✗ 𝕀𝕟𝕘𝕣𝕖𝕤𝕖 𝕦𝕟 𝕒𝕣𝕔𝕙𝕚𝕧𝕠́\n------------------------------" red
+fi
