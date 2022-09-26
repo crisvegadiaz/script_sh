@@ -23,14 +23,14 @@ texColor "
 █▀▀ █▀█ █▀█ █▀▄▀█ ▄▀█ ▀█▀ █▀▀ ▄▀█ █▀█   █░█ █▀ █▄▄
 █▀░ █▄█ █▀▄ █░▀░█ █▀█ ░█░ ██▄ █▀█ █▀▄   █▄█ ▄█ █▄█
 " blue
-echo ""
+printf "\n\n"
+
 texColor "Ver ruta de el pendrive " yellow
 texColor "[ENTER]" green
 read enterKey;
 sudo lsblk | grep sd
 texColor "▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ " blue
-echo ""
-echo ""
+printf "\n\n"
 
 texColor "Escribir ruta de el pendrive para desmontar EJ(sdb numero): " yellow
 read ruta;
@@ -53,6 +53,7 @@ case $opcion in
         texColor "❌ OPCION NO VALIDA" red
     ;;
 esac
-echo ""
+printf "\n\n"
 texColor "▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ " blue
 #End Script
+
