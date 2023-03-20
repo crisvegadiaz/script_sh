@@ -35,7 +35,7 @@ git config --global user.email $email
 texColor "▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ " blue
 printf "\n\n"
 
-texColor "Ingrese el editor: " purple;
+texColor "Ingrese el editor 👨‍💻 : " purple;
 read editor;
 git config --global core.editor $editor
 git config --global -e
