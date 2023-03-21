@@ -1,1 +1,51 @@
-confiClaveSSH.txt
+Sí, tengo experiencia en resolver el error que mencionas. El error “Permission denied (publickey)” indica que Git no pudo autenticarse con GitHub utilizando una clave SSH. A continuación, te muestro cómo solucionar este problema:
+Verifica si ya tienes una clave SSH generada en tu sistema. Ejecuta el siguiente comando en la terminal:
+
+bash
+ls -la ~/.ssh
+Si ves archivos con nombres como id_rsa y id_rsa.pub, ya tienes un par de claves SSH.
+Si no tienes un par de claves SSH o quieres generar uno nuevo, sigue estos pasos:
+
+
+css
+ssh-keygen -t rsa -b 4096 -C “your_email@example.com”
+Reemplaza “your_email@example.com” con tu dirección de correo electrónico asociada a tu cuenta de GitHub. Sigue las instrucciones en pantalla y, si lo deseas, ingresa una contraseña para proteger tu clave privada.
+Asegúrate de que el agente de claves SSH esté ejecutándose:
+
+
+bash
+eval “$(ssh-agent -s)”
+Agrega tu clave privada SSH al agente:
+
+
+javascript
+ssh-add ~/.ssh/id_rsa
+Reemplaza id_rsa con el nombre de tu archivo de clave privada si es diferente.
+Copia tu clave pública SSH al portapapeles. Puedes hacerlo con el siguiente comando:
+
+
+javascript
+cat ~/.ssh/id_rsa.pub | xclip -selection clipboard
+Si no tienes xclip instalado, puedes instalarlo o simplemente abrir el archivo id_rsa.pub en un editor de texto y copiar el contenido.
+Ve a la configuración de tu cuenta de GitHub en https://github.com/settings/keys y haz clic en "New SSH key" (Nueva clave SSH).
+
+Ingresa un título descriptivo para la clave y pega el contenido de tu clave pública en el campo "Key" (Clave). Luego, haz clic en "Add SSH key" (Agregar clave SSH).
+
+Ahora, prueba la conexión SSH con GitHub:
+
+
+java
+ssh -T git@github.com
+Si todo está configurado correctamente, deberías ver un mensaje de bienvenida de GitHub.
+Asegúrate de que tu repositorio esté configurado para usar la dirección SSH en lugar de la dirección HTTPS. Para verificar esto, ejecuta el siguiente comando en la carpeta de tu repositorio:
+
+
+git remote -v
+Si la dirección de origin comienza con https://, cámbiala a la versión SSH:
+kotlin
+git remote set-url origin git@github.com:your_username/your_repository.git
+Reemplaza “your_username” y “your_repository” con tu nombre de usuario de GitHub y el nombre de tu repositorio.
+Ahora, intenta ejecutar el comando git push -u origin main nuevamente. La autenticación SSH debería funcionar correctamente.
+
+
+Si sigues experimentando problemas, verifica que estés utilizando la cuenta de GitHub correcta y que tengas acceso de escritura al repositorio.
