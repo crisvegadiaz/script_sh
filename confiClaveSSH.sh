@@ -1,53 +1,59 @@
-#! /bin/bash 
+#!/bin/bash
 
-function texColor(){    
+# Función para imprimir texto con colores
+function texColor() {
     mensaje="$1"
     tipo="$2"
-    
-    arry1=(31 32 33 34 35)
-    arry2=('red' 'green' 'yellow' 'blue' 'purple')
-    
-    for (( c=0; c<=${#arry2[@]}; c++ ))
-    do
-        if [[ $tipo == ${arry2[c]} ]]; then
-            echo -en "\e[${arry1[c]}m${mensaje}\e[0m"
-        fi
-    done
+
+    declare -A colores=(
+        [rojo]=31
+        [verde]=32
+        [amarillo]=33
+        [azul]=34
+        [morado]=35
+    )
+
+    if [[ ${colores[$tipo]} ]]; then
+        echo -e "\e[${colores[$tipo]}m${mensaje}\e[0m"
+    fi
 }
 
-texColor "Ver Claver SSH:" red
+# Ruta del directorio SSH
+DIR_SSH="/home/$(whoami)/.ssh"
+
+# Imprimir información de la clave SSH
+texColor "Ver Clave SSH:" rojo
 printf "\n\n"
-ls -la ~/.ssh
+ls -la "$DIR_SSH"
 
-
-texColor "¿Quieres generar uno nuevo? (si o no):" yellow
-read respuesta
+# Preguntar al usuario si quieren generar una nueva clave
+texColor "¿Quieres generar una nueva? (si o no):" amarillo
+read -r respuesta
 printf "\n\n"
 
-if [ $respuesta = "si" ] 
-then
-    texColor "Ingrese su email:" purple
-    read email
+if [ "$respuesta" == "si" ]; then
+    # Generar una nueva clave SSH
+    texColor "Ingrese su correo electrónico:" morado
+    read -r email
     printf "\n"
-    ssh-keygen -t rsa -b 4096 -C $email
+    ssh-keygen -t rsa -b 4096 -C "$email" -f "$DIR_SSH/id_rsa"
 else
-    texColor "No valido" purple
+    texColor "No válido" morado
     printf "\n"
 fi
 
-
-texColor "Asegúrate de que el agente de claves SSH esté ejecutándose:" red
+# Asegurarse de que el agente de claves SSH esté en ejecución
+texColor "Asegúrate de que el agente de claves SSH esté en ejecución:" rojo
 printf "\n"
-cd ~/.ssh
-ls -la 
-eval '$(ssh-agent -s)'
+eval "$(ssh-agent -s)"
 
-texColor "Agrega tu clave privada SSH al agente:" red
+# Agregar la clave privada al agente SSH
+texColor "Agrega tu clave privada SSH al agente:" rojo
 printf "\n"
-ls -la 
+ls -la "$DIR_SSH"
 
-texColor "Ingrese el nombre de la clave privada:" yellow
-read clavePrivada
+texColor "Ingrese el nombre de la clave privada:" amarillo
+read -r clavePrivada
 printf "\n\n"
-ssh-add ~/.ssh/$clavePrivada
-cat ~/.ssh/$clavePrivada.pub | xclip -selection clipboard
+ssh-add "$DIR_SSH/$clavePrivada"
+cat "$DIR_SSH/${clavePrivada}.pub" | xclip -selection clipboard
