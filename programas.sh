@@ -35,7 +35,7 @@ texColor "
 " purple
 
 texColor ""
-arry1=('git' 'tmux' 'htop' 'neofetch' 'tree' 'locate' 'curl' 'neovim' 'ncdu')
+arry1=('snapd' 'flatpak' 'git' 'tmux' 'htop' 'neofetch' 'tree' 'locate' 'curl' 'neovim' 'ncdu')
 
 for i in "${arry1[@]}"
 do

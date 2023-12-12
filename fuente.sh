@@ -1,5 +1,5 @@
 #! /bin/sh
 
-sudo cp Menlo-Regular.ttf /usr/share/fonts/truetype
+sudo cp -r $( ls ./fuentes ) /usr/share/fonts/truetype
 sudo fc-cache -f -v
 

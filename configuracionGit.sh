@@ -43,7 +43,7 @@ git config --global -e
 texColor "▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ " blue
 printf "\n\n"
 
-texColor "Ingrese un el sitema operativo(🪟 windows,🐧 linux,🍎 mac) : " purple;
+texColor "Ingrese un el sitema operativo(🪟 windows,🐧 linux,🍎mac) : " purple;
 read sistema;
 if [ $sistema = "windows" ] 
 then 

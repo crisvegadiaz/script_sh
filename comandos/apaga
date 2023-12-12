@@ -1,5 +1,6 @@
 #! /bin/sh
 
+#Colocar en: /usr/bin
 date
 echo -n "ingrese la la hora hh:mm=";
 read hora;
