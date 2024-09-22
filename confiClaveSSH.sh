@@ -56,4 +56,14 @@ texColor "Ingrese el nombre de la clave privada:" amarillo
 read -r clavePrivada
 printf "\n\n"
 ssh-add "$DIR_SSH/$clavePrivada"
+
+# Verificar si xclip está instalado
+if ! command -v xclip &> /dev/null; then
+    texColor "xclip no está instalado. Por favor, instálalo para copiar la clave al portapapeles." rojo
+    exit
+fi
+
+# Copiar la clave pública al portapapeles
 cat "$DIR_SSH/${clavePrivada}.pub" | xclip -selection clipboard
+texColor "La clave pública se ha copiado al portapapeles." verde
+
