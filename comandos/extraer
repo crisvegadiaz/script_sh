@@ -1,73 +1,99 @@
-#! /bin/bash
-#Colocar en: /usr/bin
+#!/bin/bash
+# Colocar en: /usr/bin
 
-# Colores de texto
-function texColor(){
-    
+# Función para imprimir texto con colores
+function texColor() {
     mensaje="$1"
     tipo="$2"
     
-    arry1=(31 32 33 34 35)
-    arry2=('red' 'green' 'yellow' 'blue' 'purple')
+    declare -A colores=(
+        [red]=31
+        [green]=32
+        [yellow]=33
+        [blue]=34
+        [purple]=35
+    )
     
-    for (( c=0; c<=${#arry2[@]}; c++ ))
-    do
-        if [[ $tipo == ${arry2[c]} ]]; then
-            echo -en "\e[${arry1[c]}m${mensaje}\e[0m"
-        fi
-    done
+    if [[ ${colores[$tipo]} ]]; then
+        echo -e "\e[${colores[$tipo]}m${mensaje}\e[0m"
+    fi
 }
 
-# extracion de archivos
+# Función para imprimir líneas de separación
+function separar() {
+    local color="$1"
+    texColor "-------------------------------------------" "$color"
+}
 
-if [ $# -ne 0 ];
-then
-    texColor "____________________\n𝔼𝕤𝕥𝕒𝕔𝕚𝕠́𝕟 𝕕𝕖 𝕒𝕣𝕔𝕙𝕚𝕧𝕠𝕤\n------------------------------" blue
+# Extracción de archivos
+if [ $# -ne 0 ]; then
+    separar blue
+    texColor "ℰ𝓍𝓉𝓇𝒶𝒸𝒸𝒾𝑜𝓃 𝒹𝑒 𝒶𝓇𝒸𝒽𝒾𝓋𝑜𝓈" blue
+    separar blue
     printf "\n\n"
+    
     case $1 in
         *.tar.bz2)
+            texColor "Extrayendo $1 con tar.bz2..." yellow
             tar xvjf "$1"
         ;;
         *.tar.gz)
+            texColor "Extrayendo $1 con tar.gz..." yellow
             tar xvzf "$1"
         ;;
         *.tar.xz)
+            texColor "Extrayendo $1 con tar.xz..." yellow
             tar xf "$1"
         ;;
         *.bz2)
+            texColor "Extrayendo $1 con bunzip2..." yellow
             bunzip2 "$1"
         ;;
         *.rar)
+            texColor "Extrayendo $1 con unrar..." yellow
             unrar x "$1"
         ;;
         *.gz)
+            texColor "Extrayendo $1 con gunzip..." yellow
             gunzip "$1"
         ;;
         *.tar)
+            texColor "Extrayendo $1 con tar..." yellow
             tar xvf "$1"
         ;;
         *.tbz2)
+            texColor "Extrayendo $1 con tar.bz2..." yellow
             tar xvjf "$1"
         ;;
         *.tgz)
+            texColor "Extrayendo $1 con tar.gz..." yellow
             tar xvzf "$1"
         ;;
         *.zip)
+            texColor "Extrayendo $1 con unzip..." yellow
             unzip "$1"
         ;;
         *.Z)
+            texColor "Extrayendo $1 con uncompress..." yellow
             uncompress "$1"
         ;;
         *.7z)
+            texColor "Extrayendo $1 con 7z..." yellow
             7z x "$1"
         ;;
         *)
-            texColor "_______________________\n✗ 𝕟𝕠 𝕤𝕖́ 𝕔𝕠́𝕞𝕠 𝕖𝕩𝕥𝕣𝕒𝕖𝕣 ${1}...\n------------------------------" red
-            exit
-            
+            texColor "✗ No se puede extraer el archivo ${1}." red
+            separar red
+            exit 1
         ;;
     esac
-    texColor "______________\n√ 𝔽𝕚𝕟𝕒𝕝𝕚𝕫𝕒𝕕𝕠\n------------------------------" green
+    
+    printf "\n"
+    separar green
+    texColor "√ Extracción finalizada correctamente." green
+    separar green
 else
-    texColor "____________________\n✗ 𝕀𝕟𝕘𝕣𝕖𝕤𝕖 𝕦𝕟 𝕒𝕣𝕔𝕙𝕚𝕧𝕠́\n------------------------------" red
+    separar red
+    texColor "✗ Debe proporcionar un archivo para extraer." red
+    separar red
 fi

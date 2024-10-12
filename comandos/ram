@@ -1,9 +1,41 @@
 #!/bin/bash
-# memoria ram.
-sudo echo "echo 1 > /proc/sys/vm/drop_caches"
-# memoria swap
-sudo swapoff -a
-sudo swapon -a
+# Colocar en: /usr/bin
+
+# Verificar si el script se ejecuta con privilegios de superusuario
+if [[ $EUID -ne 0 ]]; then
+   echo -e "\e[31mEste script debe ejecutarse con privilegios de superusuario (sudo).\e[0m"
+   exit 1
+fi
+
+# Función para imprimir mensajes con colores
+function texColor() {
+    local mensaje="$1"
+    local color="$2"
+
+    declare -A colores=(
+        [red]=31
+        [green]=32
+        [yellow]=33
+        [blue]=34
+        [purple]=35
+    )
+
+    echo -e "\e[${colores[$color]}m${mensaje}\e[0m"
+}
+
+# Limpiar la memoria caché
+texColor "========== Limpiando la memoria caché ==========" yellow
+sync # Sincroniza los datos pendientes de escribir en disco
+echo 1 > /proc/sys/vm/drop_caches
+texColor "✔️ Memoria caché limpiada correctamente." green
+
+# Limpiar la memoria swap
+texColor "========== Reiniciando la memoria swap ==========" yellow
+swapoff -a
+swapon -a
+texColor "✔️ Memoria swap reiniciada correctamente." green
+
+# Mostrar el estado de la memoria después de la limpieza
+texColor "========== Estado de la memoria ==========" blue
 free -h
-
-
+texColor "✔️ Operación completada con éxito." green

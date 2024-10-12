@@ -1,88 +1,93 @@
-#! /bin/bash
+#!/bin/bash
 
-#Paleta de colores texto
-function texColor(){
-    
+# Función para mostrar texto con colores
+function texColor() {
     mensaje="$1"
     tipo="$2"
-    
-    arry1=(31 32 33 34 35)
-    arry2=('red' 'green' 'yellow' 'blue' 'purple')
-    
-    for (( c=0; c<=${#arry2[@]}; c++ ))
-    do
-        if [[ $tipo == ${arry2[c]} ]]; then
-            echo -en "\e[${arry1[c]}m${mensaje}\e[0m"
+    colores=(31 32 33 34 35)
+    nombres=('rojo' 'verde' 'amarillo' 'azul' 'morado')
+
+    for i in "${!nombres[@]}"; do
+        if [[ $tipo == "${nombres[i]}" ]]; then
+            echo -e "\e[${colores[i]}m${mensaje}\e[0m"
         fi
     done
 }
 
-echo $0
+# Función para detectar la distribución de Linux
+function detectarDistro() {
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        echo $ID
+    else
+        echo "desconocido"
+    fi
+}
 
-texColor "
-█ █▄░█ █▀ ▀█▀ ▄▀█ █░░ ▄▀█ █▀█   █▀█ █▀█ █▀█ █▀▀ █▀█ ▄▀█ █▀▄▀█ ▄▀█ █▀
-█ █░▀█ ▄█ ░█░ █▀█ █▄▄ █▀█ █▀▄   █▀▀ █▀▄ █▄█ █▄█ █▀▄ █▀█ █░▀░█ █▀█ ▄█
-" purple
-printf "\n\n"
-texColor "Debe usar Sudo:" yellow
-printf "\n\n"
-
-texColor "▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ " blue
+# Mostrar título
+texColor "---------------------------------------------" azul
+texColor "       🐧 INSTALADOR MULTIPLATAFORMA         " verde
+texColor "---------------------------------------------" azul
 printf "\n"
-texColor "
-█▀▄ █▄░█ █▀▀
-█▄▀ █░▀█ █▀░
-" purple
 
-texColor ""
-arry1=('snapd' 'flatpak' 'git' 'tmux' 'htop' 'neofetch' 'tree' 'locate' 'curl' 'neovim' 'ncdu')
+# Detectar distribución
+distro=$(detectarDistro)
+texColor "Detectando distribución: $distro" amarillo
+printf "\n"
 
-for i in "${arry1[@]}"
-do
-    printf "\n\n"
-    texColor " Programa a Intalar ${i}" green
-    printf "\n\n"
-    dnf install ${i} -y
-    printf "\n\n"
-    texColor "_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶" yellow
+# Listas de programas a instalar
+programas_base=('snapd' 'flatpak' 'git' 'tmux' 'htop' 'neofetch' 'tree' 'locate' 'curl' 'neovim' 'ncdu')
+programas_snap=('bottom' 'speedtest-cli' 'cpufetch')
+programas_flatpak=('telegram')
+
+# Función para instalar programas según el gestor de paquetes
+function instalarPaquete() {
+    local paquete="$1"
+    case $distro in
+        fedora)
+            sudo dnf install -y "$paquete"
+            ;;
+        arch | manjaro)
+            sudo pacman -Syu --noconfirm "$paquete"
+            ;;
+        ubuntu | debian)
+            sudo apt update && sudo apt install -y "$paquete"
+            ;;
+        *)
+            texColor "❌ Distribución no soportada: $distro" rojo
+            return 1
+            ;;
+    esac
+}
+
+# Instalación de programas básicos
+for prog in "${programas_base[@]}"; do
+    printf "\n"
+    texColor "Instalando: $prog" verde
+    printf "\n"
+    instalarPaquete "$prog"
+    texColor "---------------------------------------------" amarillo
 done
-printf "\n"
-texColor "▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ " blue
-printf "\n"
-texColor "
-█▀ █▄░█ ▄▀█ █▀█
-▄█ █░▀█ █▀█ █▀▀
-" purple
 
-arry2=('bottom' 'speedtest-cli' 'cpufetch')
-
-for i in "${arry2[@]}"
-do
-    printf "\n\n"
-    texColor " Programa a Intalar ${i}" green
-    printf "\n\n"
-    snap install ${i}
-    printf "\n\n"
-    texColor "_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶" yellow
+# Instalación de programas vía Snap
+for prog in "${programas_snap[@]}"; do
+    printf "\n"
+    texColor "Instalando con Snap: $prog" verde
+    printf "\n"
+    sudo snap install "$prog"
+    texColor "---------------------------------------------" amarillo
 done
-printf "\n"
-texColor "▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ " blue
-printf "\n"
-texColor "
-█▀▀ █░░ ▄▀█ ▀█▀ █▀█ ▄▀█ █▄▀
-█▀░ █▄▄ █▀█ ░█░ █▀▀ █▀█ █░█
-" purple
 
-arry3=('telegram')
-
-for i in "${arry3[@]}"
-do
-    printf "\n\n"
-    texColor " Programa a Intalar ${i}" green
-    printf "\n\n"
-    flatpak install ${i} -y
-    printf "\n\n"
-    texColor "_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶_̶" yellow
+# Instalación de programas vía Flatpak
+for prog in "${programas_flatpak[@]}"; do
+    printf "\n"
+    texColor "Instalando con Flatpak: $prog" verde
+    printf "\n"
+    sudo flatpak install -y "$prog"
+    texColor "---------------------------------------------" amarillo
 done
-printf "\n"
-texColor "▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ " blue
+
+# Finalizar el script
+texColor "---------------------------------------------" azul
+texColor "        ✅ INSTALACIÓN COMPLETADA ✅          " verde
+texColor "---------------------------------------------" azul

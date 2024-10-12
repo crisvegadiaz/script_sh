@@ -1,59 +1,94 @@
 #!/bin/bash
-#Colocar en: /usr/bin
+# Colocar en: /usr/bin
 
-#Color de texto
-function texColor(){
-    
-    mensaje="$1"
-    tipo="$2"
-    
-    arry1=(31 32 33 34 35)
-    arry2=('red' 'green' 'yellow' 'blue' 'purple')
-    
-    for (( c=0; c<=${#arry2[@]}; c++ ))
-    do
-        if [[ $tipo == ${arry2[c]} ]]; then
-            echo -en "\e[${arry1[c]}m${mensaje}\e[0m"
-        fi
-    done
+# Verificar si el script se ejecuta con privilegios de superusuario
+if [[ $EUID -ne 0 ]]; then
+   echo "Este script debe ejecutarse con privilegios de superusuario (sudo)." 
+   exit 1
+fi
+
+# Función para imprimir texto con colores
+function texColor() {
+    local mensaje="$1"
+    local tipo="$2"
+
+    declare -A colores=(
+        [red]=31
+        [green]=32
+        [yellow]=33
+        [blue]=34
+        [purple]=35
+    )
+
+    if [[ ${colores[$tipo]} ]]; then
+        echo -e "\e[${colores[$tipo]}m${mensaje}\e[0m"
+    fi
 }
 
-#Colocar en: /usr/bin
+# Banner de bienvenida
 texColor "
 █▀▀ █▀█ █▀█ █▀▄▀█ ▄▀█ ▀█▀ █▀▀ ▄▀█ █▀█   █░█ █▀ █▄▄
 █▀░ █▄█ █▀▄ █░▀░█ █▀█ ░█░ ██▄ █▀█ █▀▄   █▄█ ▄█ █▄█
 " blue
 printf "\n\n"
 
-texColor "Ver ruta de el pendrive " yellow
-texColor "[ENTER]" green
-read enterKey;
+# Mostrar información de dispositivos de almacenamiento
+texColor "Ver ruta del pendrive" yellow
+texColor "[Presiona ENTER para continuar]" green
+read -r enterKey
 sudo lsblk | grep sd
 texColor "▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ " blue
 printf "\n\n"
 
-texColor "Escribir ruta de el pendrive para desmontar EJ(sdb numero): " yellow
-read ruta;
-sudo umount /dev/$ruta
-texColor "Escribir el nombre de USB: " yellow
-read nombre;
+# Solicitar la ruta del dispositivo a desmontar
+texColor "Escribe la ruta del pendrive para desmontar (ej. sdb1): " yellow
+read -r ruta
 
-texColor "Formatos (1)NTFS (2)FAT32: " yellow
-read opcion;
+# Validar que la ruta no esté vacía y exista
+if [[ -z "$ruta" || ! -e "/dev/$ruta" ]]; then
+    texColor "❌ Ruta no válida o el dispositivo no existe." red
+    exit 1
+fi
+
+# Desmontar el dispositivo
+sudo umount "/dev/$ruta"
+if [[ $? -ne 0 ]]; then
+    texColor "❌ Error al desmontar el dispositivo." red
+    exit 1
+fi
+
+# Solicitar el nombre del USB
+texColor "Escribe el nombre del USB: " yellow
+read -r nombre
+
+# Selección del formato
+texColor "Selecciona el formato (1)NTFS (2)FAT32: " yellow
+read -r opcion
+
 case $opcion in
     1)
-        sudo mkfs.ntfs -f -L $nombre /dev/$ruta
-        texColor "✅ Finalizado" green
-    ;;
+        sudo mkfs.ntfs -f -L "$nombre" "/dev/$ruta"
+        if [[ $? -eq 0 ]]; then
+            texColor "✅ Formateo a NTFS completado." green
+        else
+            texColor "❌ Error al formatear a NTFS." red
+            exit 1
+        fi
+        ;;
     2)
-        sudo mkfs.vfat -F 32 -n $nombre /dev/$ruta
-        texColor "✅ Finalizado" green
-    ;;
+        sudo mkfs.vfat -F 32 -n "$nombre" "/dev/$ruta"
+        if [[ $? -eq 0 ]]; then
+            texColor "✅ Formateo a FAT32 completado." green
+        else
+            texColor "❌ Error al formatear a FAT32." red
+            exit 1
+        fi
+        ;;
     *)
-        texColor "❌ OPCION NO VALIDA" red
-    ;;
+        texColor "❌ Opción no válida." red
+        exit 1
+        ;;
 esac
+
 printf "\n\n"
 texColor "▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ " blue
-#End Script
-
