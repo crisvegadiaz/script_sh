@@ -1,18 +1,5 @@
 #!/bin/bash
-
-# Función para mostrar texto con colores
-function texColor() {
-    mensaje="$1"
-    tipo="$2"
-    colores=(31 32 33 34 35)
-    nombres=('rojo' 'verde' 'amarillo' 'azul' 'morado')
-
-    for i in "${!nombres[@]}"; do
-        if [[ $tipo == "${nombres[i]}" ]]; then
-            echo -e "\e[${colores[i]}m${mensaje}\e[0m"
-        fi
-    done
-}
+source ./comandos/textoColor.sh
 
 # Función para detectar la distribución de Linux
 function detectarDistro() {
@@ -20,20 +7,20 @@ function detectarDistro() {
         . /etc/os-release
         echo $ID
     else
-        echo "desconocido"
+        echo 'desconocido'
     fi
 }
 
 # Mostrar título
-texColor "---------------------------------------------" azul
-texColor "       🐧 INSTALADOR MULTIPLATAFORMA         " verde
-texColor "---------------------------------------------" azul
-printf "\n"
+texColor '▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄' blue
+texColor '      🐧 INSTALADOR MULTIPLATAFORMA     ' green
+texColor '▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄' blue
+printf '\n'
 
 # Detectar distribución
 distro=$(detectarDistro)
-texColor "Detectando distribución: $distro" amarillo
-printf "\n"
+texColor 'Detectando distribución: $distro' yellow
+printf '\n'
 
 # Listas de programas a instalar
 programas_base=('snapd' 'flatpak' 'git' 'tmux' 'htop' 'neofetch' 'tree' 'locate' 'curl' 'neovim' 'ncdu')
@@ -42,52 +29,52 @@ programas_flatpak=('telegram')
 
 # Función para instalar programas según el gestor de paquetes
 function instalarPaquete() {
-    local paquete="$1"
+    local paquete='$1'
     case $distro in
         fedora)
-            sudo dnf install -y "$paquete"
+            sudo dnf install -y '$paquete'
             ;;
         arch | manjaro)
-            sudo pacman -Syu --noconfirm "$paquete"
+            sudo pacman -Syu --noconfirm '$paquete'
             ;;
         ubuntu | debian)
-            sudo apt update && sudo apt install -y "$paquete"
+            sudo apt update && sudo apt install -y '$paquete'
             ;;
         *)
-            texColor "❌ Distribución no soportada: $distro" rojo
+            texColor '❌ Distribución no soportada: $distro' red
             return 1
             ;;
     esac
 }
 
 # Instalación de programas básicos
-for prog in "${programas_base[@]}"; do
-    printf "\n"
-    texColor "Instalando: $prog" verde
-    printf "\n"
-    instalarPaquete "$prog"
-    texColor "---------------------------------------------" amarillo
+for prog in '${programas_base[@]}'; do
+    printf '\n'
+    texColor 'Instalando: $prog' green
+    printf '\n'
+    instalarPaquete '$prog'
+    texColor '▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄' yellow
 done
 
 # Instalación de programas vía Snap
-for prog in "${programas_snap[@]}"; do
-    printf "\n"
-    texColor "Instalando con Snap: $prog" verde
-    printf "\n"
-    sudo snap install "$prog"
-    texColor "---------------------------------------------" amarillo
+for prog in '${programas_snap[@]}'; do
+    printf '\n'
+    texColor 'Instalando con Snap: $prog' green
+    printf '\n'
+    sudo snap install '$prog'
+    texColor '▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄' yellow
 done
 
 # Instalación de programas vía Flatpak
-for prog in "${programas_flatpak[@]}"; do
-    printf "\n"
-    texColor "Instalando con Flatpak: $prog" verde
-    printf "\n"
-    sudo flatpak install -y "$prog"
-    texColor "---------------------------------------------" amarillo
+for prog in '${programas_flatpak[@]}'; do
+    printf '\n'
+    texColor 'Instalando con Flatpak: $prog' green
+    printf '\n'
+    sudo flatpak install -y '$prog'
+    texColor '▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄' yellow
 done
 
 # Finalizar el script
-texColor "---------------------------------------------" azul
-texColor "        ✅ INSTALACIÓN COMPLETADA ✅          " verde
-texColor "---------------------------------------------" azul
+texColor '▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄' blue
+texColor '     ✅ INSTALACIÓN COMPLETADA ✅       ' green
+texColor '▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄' blue

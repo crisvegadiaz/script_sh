@@ -1,33 +1,20 @@
 #!/bin/bash
 # Colocar en: /usr/bin
-
-# Función para mostrar texto con colores
-function texColor(){
-    mensaje="$1"
-    tipo="$2"
-    colores=(31 32 33 34 35)
-    nombres=('rojo' 'verde' 'amarillo' 'azul' 'morado')
-
-    for i in "${!nombres[@]}"; do
-        if [[ $tipo == "${nombres[i]}" ]]; then
-            echo -e "\e[${colores[i]}m${mensaje}\e[0m"
-        fi
-    done
-}
+source textoColor.sh
 
 # Mostrar la fecha actual
-texColor "---------------------------------------------" azul
-texColor "             ⏰ PROGRAMAR APAGADO             " verde
-texColor "---------------------------------------------" azul
+texColor "+-------------------------------------------+" blue
+texColor "|             ⏰ PROGRAMAR APAGADO          |" green
+texColor "+-------------------------------------------+" blue
 date
 printf "\n"
 
 # Solicitar la hora de apagado o reinicio
-texColor "Ingrese la hora en formato hh:mm: " amarillo
+texColor "Ingrese la hora en formato hh:mm: " yellow
 read -r hora
 
 # Solicitar si se desea apagar o reiniciar
-texColor "(1) Apagar o (2) Reiniciar: " amarillo
+texColor "(1) Apagar o (2) Reiniciar: " yellow
 read -r opcion
 
 # Ejecutar la opción seleccionada
@@ -35,12 +22,12 @@ case $opcion in
   1)
     # Apagar el sistema
     sudo shutdown -h "$hora" "⚠️  Guarde su trabajo, la PC se apagará a las $hora."
-    texColor "✅ Apagado programado exitosamente para las $hora." verde
+    texColor "✅ Apagado programado exitosamente para las $hora." green
     ;;
   2)
     # Reiniciar el sistema
     sudo shutdown -r "$hora" "⚠️  Guarde su trabajo, la PC se reiniciará a las $hora."
-    texColor "✅ Reinicio programado exitosamente para las $hora." verde
+    texColor "✅ Reinicio programado exitosamente para las $hora." green
     ;;
   *)
     # Manejar opción no válida
@@ -48,4 +35,4 @@ case $opcion in
     ;;
 esac
 
-texColor "---------------------------------------------" azul
+texColor "---------------------------------------------" blue

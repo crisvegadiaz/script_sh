@@ -1,5 +1,6 @@
 #!/bin/bash
 # Colocar en: /usr/bin
+source textoColor.sh
 
 # Verificar si el script se ejecuta con privilegios de superusuario
 if [[ $EUID -ne 0 ]]; then
@@ -7,29 +8,8 @@ if [[ $EUID -ne 0 ]]; then
    exit 1
 fi
 
-# Función para imprimir texto con colores
-function texColor() {
-    local mensaje="$1"
-    local tipo="$2"
-
-    declare -A colores=(
-        [red]=31
-        [green]=32
-        [yellow]=33
-        [blue]=34
-        [purple]=35
-    )
-
-    if [[ ${colores[$tipo]} ]]; then
-        echo -e "\e[${colores[$tipo]}m${mensaje}\e[0m"
-    fi
-}
-
 # Banner de bienvenida
-texColor "
-█▀▀ █▀█ █▀█ █▀▄▀█ ▄▀█ ▀█▀ █▀▀ ▄▀█ █▀█   █░█ █▀ █▄▄
-█▀░ █▄█ █▀▄ █░▀░█ █▀█ ░█░ ██▄ █▀█ █▀▄   █▄█ ▄█ █▄█
-" blue
+texColor "========== 🛠️ Formatear USB ==========" blue
 printf "\n\n"
 
 # Mostrar información de dispositivos de almacenamiento
@@ -37,7 +17,7 @@ texColor "Ver ruta del pendrive" yellow
 texColor "[Presiona ENTER para continuar]" green
 read -r enterKey
 sudo lsblk | grep sd
-texColor "▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ " blue
+texColor '▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄' green
 printf "\n\n"
 
 # Solicitar la ruta del dispositivo a desmontar
@@ -91,4 +71,4 @@ case $opcion in
 esac
 
 printf "\n\n"
-texColor "▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ ▄▄ " blue
+texColor '▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄' green

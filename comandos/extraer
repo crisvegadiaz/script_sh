@@ -1,23 +1,7 @@
 #!/bin/bash
 # Colocar en: /usr/bin
 
-# Función para imprimir texto con colores
-function texColor() {
-    mensaje="$1"
-    tipo="$2"
-    
-    declare -A colores=(
-        [red]=31
-        [green]=32
-        [yellow]=33
-        [blue]=34
-        [purple]=35
-    )
-    
-    if [[ ${colores[$tipo]} ]]; then
-        echo -e "\e[${colores[$tipo]}m${mensaje}\e[0m"
-    fi
-}
+source textoColor.sh
 
 # Función para imprimir líneas de separación
 function separar() {
@@ -28,7 +12,7 @@ function separar() {
 # Extracción de archivos
 if [ $# -ne 0 ]; then
     separar blue
-    texColor "ℰ𝓍𝓉𝓇𝒶𝒸𝒸𝒾𝑜𝓃 𝒹𝑒 𝒶𝓇𝒸𝒽𝒾𝓋𝑜𝓈" blue
+    texColor "📁 Extracción de archivos" blue
     separar blue
     printf "\n\n"
     

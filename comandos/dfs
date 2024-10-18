@@ -1,23 +1,6 @@
 #!/bin/bash
 # Colocar en: /usr/bin
-
-# Función para mostrar texto con colores
-function texColor() {
-    mensaje="$1"
-    tipo="$2"
-    
-    declare -A colores=(
-        [red]=31
-        [green]=32
-        [yellow]=33
-        [blue]=34
-        [purple]=35
-    )
-    
-    if [[ ${colores[$tipo]} ]]; then
-        echo -e "\e[${colores[$tipo]}m${mensaje}\e[0m"
-    fi
-}
+source textoColor.sh
 
 # Verificar el sistema operativo
 os=$(grep '^ID=' /etc/os-release | cut -d= -f2)
@@ -35,9 +18,9 @@ case "$os" in
         sudo dnf update -y
     ;;
     arch)
-        texColor '+-------------------------------------+' green
-        texColor '|     𝙇𝙄𝙎𝙏𝘼 𝘿𝙀 𝘼𝘾𝙏𝙐𝘼𝙇𝙄𝙕𝘼𝘾𝙄𝙊𝙉𝙀𝙎 𝙋𝘼𝘾𝙈𝘼𝙉    |' green
-        texColor '+-------------------------------------+' green
+        texColor '+---------------------------------------+' green
+        texColor '|     𝙇𝙄𝙎𝙏𝘼 𝘿𝙀 𝘼𝘾𝙏𝙐𝘼𝙇𝙄𝙕𝘼𝘾𝙄𝙊𝙉𝙀𝙎 𝙋𝘼𝘾𝙈𝘼𝙉  |' green
+        texColor '+---------------------------------------+' green
         printf "\n"
         sudo pacman -Syu --noconfirm
     ;;

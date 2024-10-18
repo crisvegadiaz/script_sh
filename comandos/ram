@@ -1,27 +1,12 @@
 #!/bin/bash
 # Colocar en: /usr/bin
+source textoColor.sh
 
 # Verificar si el script se ejecuta con privilegios de superusuario
 if [[ $EUID -ne 0 ]]; then
    echo -e "\e[31mEste script debe ejecutarse con privilegios de superusuario (sudo).\e[0m"
    exit 1
 fi
-
-# Función para imprimir mensajes con colores
-function texColor() {
-    local mensaje="$1"
-    local color="$2"
-
-    declare -A colores=(
-        [red]=31
-        [green]=32
-        [yellow]=33
-        [blue]=34
-        [purple]=35
-    )
-
-    echo -e "\e[${colores[$color]}m${mensaje}\e[0m"
-}
 
 # Limpiar la memoria caché
 texColor "========== Limpiando la memoria caché ==========" yellow
