@@ -2,69 +2,78 @@
 source ./comandos/textoColor.sh
 
 # Ruta del directorio SSH
-DIR_SSH="/home/$(whoami)/.ssh"
+DIR_SSH="$HOME/.ssh"
 
-# Imprimir información de la clave SSH
-texColor "Ver Clave SSH:" red
-printf "\n\n"
+# Crear el directorio SSH si no existe
+if [[ ! -d "$DIR_SSH" ]]; then
+    texColor "El directorio $DIR_SSH no existe. Creándolo..." yellow
+    mkdir -p "$DIR_SSH" || { texColor "Error al crear el directorio $DIR_SSH." red; exit 1; }
+fi
+
+# Mostrar contenido del directorio .ssh
+texColor "Contenido del directorio SSH:" red
+printf "\n"
 ls -la "$DIR_SSH"
 
-# Preguntar al usuario si quieren generar una nueva clave
-texColor "¿Quieres generar una nueva? (si o no):" yellow
+# Preguntar si se desea generar una nueva clave
+texColor "¿Deseas generar una nueva clave SSH? (si/no):" yellow
 read -r respuesta
-printf "\n\n"
+respuesta=$(echo "$respuesta" | tr '[:upper:]' '[:lower:]' | xargs) # Normalizar entrada
 
+# Validar respuesta
 if [[ "$respuesta" == "si" ]]; then
-    # Generar una nueva clave SSH
-    texColor "Ingrese su correo electrónico:" purple
+    texColor "Introduce tu correo electrónico para asociar con la clave SSH:" purple
     read -r email
-    printf "\n"
-    
-    # Verificar si ya existe una clave con el mismo nombre
+
+    # Verificar si existe una clave por defecto
     if [[ -f "$DIR_SSH/id_rsa" ]]; then
-        texColor "La clave id_rsa ya existe. ¿Deseas sobreescribirla? (si o no):" red
+        texColor "Ya existe una clave SSH llamada id_rsa. ¿Deseas sobrescribirla? (si/no):" red
         read -r sobreescribir
+        sobreescribir=$(echo "$sobreescribir" | tr '[:upper:]' '[:lower:]' | xargs)
+        
         if [[ "$sobreescribir" != "si" ]]; then
-            texColor "Operación cancelada." red
-            exit
+            texColor "Operación cancelada. No se generó una nueva clave." red
+            exit 0
         fi
     fi
-    
-    # Generar la clave SSH
-    ssh-keygen -t rsa -b 4096 -C "$email" -f "$DIR_SSH/id_rsa" -N ""
+
+    # Generar clave SSH
+    if ssh-keygen -t rsa -b 4096 -C "$email" -f "$DIR_SSH/id_rsa" -N ""; then
+        texColor "Clave SSH generada exitosamente." green
+    else
+        texColor "Error al generar la clave SSH." red
+        exit 1
+    fi
+elif [[ "$respuesta" == "no" ]]; then
+    texColor "No se generó una nueva clave SSH. Finalizando." purple
+    exit 0
 else
-    texColor "Operación cancelada. No se generó una nueva clave." purple
-    printf "\n"
+    texColor "Respuesta no válida. Por favor, ejecuta el script de nuevo y responde 'si' o 'no'." red
+    exit 1
 fi
 
-# Asegurarse de que el agente de claves SSH esté en ejecución
-texColor "Asegúrate de que el agente de claves SSH esté en ejecución:" red
-printf "\n"
-eval "$(ssh-agent -s)"
-
-# Agregar la clave privada al agente SSH
-texColor "Agrega tu clave privada SSH al agente:" red
-printf "\n"
-ls -la "$DIR_SSH"
-
-texColor "Ingrese el nombre de la clave privada (por defecto: id_rsa):" yellow
-read -r clavePrivada
-clavePrivada=${clavePrivada:-id_rsa}  # Usar id_rsa por defecto si está vacío
-
-if ssh-add "$DIR_SSH/$clavePrivada"; then
-    texColor "Clave agregada exitosamente al agente SSH." green
+# Iniciar el agente SSH
+texColor "Iniciando el agente SSH..." yellow
+if eval "$(ssh-agent -s)"; then
+    texColor "Agente SSH iniciado correctamente." green
 else
-    texColor "Error al agregar la clave al agente SSH." red
-    exit
+    texColor "Error al iniciar el agente SSH." red
+    exit 1
 fi
 
-# Verificar si xclip está instalado
-if ! command -v xclip &> /dev/null; then
-    texColor "xclip no está instalado. Por favor, instala xclip o copia manualmente la clave pública." red
-    cat "$DIR_SSH/${clavePrivada}.pub"
-    exit
+# Agregar clave privada al agente SSH
+if ssh-add "$DIR_SSH/id_rsa"; then
+    texColor "Clave privada SSH agregada al agente correctamente." green
+else
+    texColor "Error al agregar la clave privada al agente SSH." red
+    exit 1
 fi
 
-# Copiar la clave pública al portapapeles
-cat "$DIR_SSH/${clavePrivada}.pub" | xclip -selection clipboard
-texColor "La clave pública se ha copiado al portapapeles." green
+# Copiar clave pública al portapapeles (si xclip está instalado)
+if command -v xclip &> /dev/null; then
+    cat "$DIR_SSH/id_rsa.pub" | xclip -selection clipboard
+    texColor "La clave pública se ha copiado al portapapeles." green
+else
+    texColor "xclip no está instalado. Por favor, copia manualmente la clave pública:" red
+    cat "$DIR_SSH/id_rsa.pub"
+fi

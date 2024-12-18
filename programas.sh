@@ -5,7 +5,7 @@ source ./comandos/textoColor.sh
 function detectarDistro() {
     if [ -f /etc/os-release ]; then
         . /etc/os-release
-        echo $ID
+        echo "$ID"
     else
         echo 'desconocido'
     fi
@@ -19,58 +19,58 @@ printf '\n'
 
 # Detectar distribución
 distro=$(detectarDistro)
-texColor 'Detectando distribución: $distro' yellow
+texColor "Detectando distribución: $distro" yellow
 printf '\n'
 
 # Listas de programas a instalar
-programas_base=('snapd' 'flatpak' 'git' 'tmux' 'htop' 'neofetch' 'tree' 'locate' 'curl' 'neovim' 'ncdu')
-programas_snap=('bottom' 'speedtest-cli' 'cpufetch')
-programas_flatpak=('telegram')
+programas_base=("snapd" "flatpak" "git" "tmux" "htop" "neofetch" "tree" "locate" "curl" "neovim" "ncdu")
+programas_snap=("bottom" "speedtest-cli" "cpufetch")
+programas_flatpak=("telegram")
 
 # Función para instalar programas según el gestor de paquetes
 function instalarPaquete() {
-    local paquete='$1'
-    case $distro in
+    local paquete="$1"
+    case "$distro" in
         fedora)
-            sudo dnf install -y '$paquete'
+            sudo dnf install -y "$paquete"
             ;;
         arch | manjaro)
-            sudo pacman -Syu --noconfirm '$paquete'
+            sudo pacman -Syu --noconfirm "$paquete"
             ;;
         ubuntu | debian)
-            sudo apt update && sudo apt install -y '$paquete'
+            sudo apt update && sudo apt install -y "$paquete"
             ;;
         *)
-            texColor '❌ Distribución no soportada: $distro' red
+            texColor "❌ Distribución no soportada: $distro" red
             return 1
             ;;
     esac
 }
 
 # Instalación de programas básicos
-for prog in '${programas_base[@]}'; do
+for prog in "${programas_base[@]}"; do
     printf '\n'
-    texColor 'Instalando: $prog' green
+    texColor "Instalando: $prog" green
     printf '\n'
-    instalarPaquete '$prog'
+    instalarPaquete "$prog"
     texColor '▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄' yellow
 done
 
 # Instalación de programas vía Snap
-for prog in '${programas_snap[@]}'; do
+for prog in "${programas_snap[@]}"; do
     printf '\n'
-    texColor 'Instalando con Snap: $prog' green
+    texColor "Instalando con Snap: $prog" green
     printf '\n'
-    sudo snap install '$prog'
+    sudo snap install "$prog"
     texColor '▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄' yellow
 done
 
 # Instalación de programas vía Flatpak
-for prog in '${programas_flatpak[@]}'; do
+for prog in "${programas_flatpak[@]}"; do
     printf '\n'
-    texColor 'Instalando con Flatpak: $prog' green
+    texColor "Instalando con Flatpak: $prog" green
     printf '\n'
-    sudo flatpak install -y '$prog'
+    sudo flatpak install -y "$prog"
     texColor '▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄' yellow
 done
 
