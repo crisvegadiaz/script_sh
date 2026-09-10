@@ -1,68 +1,233 @@
 #!/bin/bash
 # Colocar en: /usr/bin
-source textoColor.sh
 
-# Verificar si el script se ejecuta con privilegios de superusuario
+# -----------------------------------------------------------------------------
+# Carga dinámica de textoColor.sh con fallback seguro
+# -----------------------------------------------------------------------------
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+if [ -f "$SCRIPT_DIR/textoColor.sh" ]; then
+    source "$SCRIPT_DIR/textoColor.sh"
+elif [ -f "/usr/bin/textoColor.sh" ]; then
+    source "/usr/bin/textoColor.sh"
+else
+    # Fallback en caso de que textoColor.sh no esté accesible
+    function texColor() {
+        local mensaje="$1"
+        local tipo="$2"
+        declare -A colores=([red]=31 [green]=32 [yellow]=33 [blue]=34 [purple]=35)
+        if [[ -n ${colores[$tipo]} ]]; then
+            echo -e "\e[${colores[$tipo]}m${mensaje}\e[0m"
+        else
+            echo "$mensaje"
+        fi
+    }
+fi
+
+# Función para imprimir líneas de separación
+function separar() {
+    local color="$1"
+    texColor "----------------------------------------------------------------------" "$color"
+}
+
+# -----------------------------------------------------------------------------
+# Ayuda y uso
+# -----------------------------------------------------------------------------
+function mostrar_ayuda() {
+    separar blue
+    texColor "🛠️  Script para Formatear Dispositivos USB" blue
+    separar blue
+    echo "Uso: sudo usb [opciones]"
+    echo ""
+    echo "Descripción:"
+    echo "  Herramienta interactiva para identificar, desmontar y formatear"
+    echo "  pendrives y tarjetas de memoria de forma segura."
+    echo ""
+    echo "Formatos soportados:"
+    echo "  1) FAT32  - Compatible con Smart TVs, consolas, Windows, Mac y Linux (máx. 4GB por archivo)"
+    echo "  2) NTFS   - Ideal para Windows y archivos grandes (>4GB)"
+    echo "  3) exFAT  - Compatible con Windows, Mac y Linux para archivos grandes (>4GB)"
+    echo "  4) ext4   - Formato nativo de Linux (permisos POSIX)"
+    echo ""
+    echo "Ejemplos:"
+    echo "  sudo usb         # Inicia el formateador interactivo"
+    echo "  usb -h           # Muestra esta ayuda"
+    separar blue
+}
+
+if [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
+    mostrar_ayuda
+    exit 0
+fi
+
+# -----------------------------------------------------------------------------
+# Verificar privilegios de superusuario (sudo)
+# -----------------------------------------------------------------------------
 if [[ $EUID -ne 0 ]]; then
-   echo "Este script debe ejecutarse con privilegios de superusuario (sudo)." 
+   texColor "❌ Este script debe ejecutarse con privilegios de superusuario (sudo)." red
+   echo "Uso: sudo usb"
    exit 1
 fi
 
-# Banner de bienvenida
+# -----------------------------------------------------------------------------
+# Función para listar dispositivos separados por categoría (Removibles vs Internos)
+# -----------------------------------------------------------------------------
+function mostrar_dispositivos() {
+    local header
+    header=$(lsblk -e 7 -o NAME,SIZE,FSTYPE,TYPE,LABEL,MOUNTPOINTS | head -n 1)
+
+    # Identificar discos de tipo removible (RM=1 o TRAN=usb)
+    local removables_list
+    removables_list=$(lsblk -d -n -e 7 -o NAME,RM,TRAN | awk '$2=="1" || $3=="usb" {print $1}')
+
+    separar green
+    texColor "🔌 DISPOSITIVOS REMOVIBLES / EXTRAÍBLES (Pendrives / USB / Tarjetas SD):" green
+    separar green
+    echo "$header"
+    
+    local count_rem=0
+    for dev in $removables_list; do
+        lsblk -e 7 -o NAME,SIZE,FSTYPE,TYPE,LABEL,MOUNTPOINTS "/dev/$dev" | tail -n +2
+        count_rem=$((count_rem + 1))
+    done
+
+    if [ $count_rem -eq 0 ]; then
+        texColor "   (No se detectaron pendrives o dispositivos USB removibles conectados)" yellow
+    fi
+
+    printf "\n"
+    separar purple
+    texColor "🖥️ DISPOSITIVOS INTERNOS / FIJOS (Discos del Sistema / SSD / HDD):" purple
+    separar purple
+    echo "$header"
+
+    # Identificar discos internos (RM=0 y TRAN!=usb)
+    local internals_list
+    internals_list=$(lsblk -d -n -e 7 -o NAME,RM,TRAN | awk '($2=="0" && $3!="usb") || ($2=="" && $3=="") {print $1}')
+
+    for dev in $internals_list; do
+        lsblk -e 7 -o NAME,SIZE,FSTYPE,TYPE,LABEL,MOUNTPOINTS "/dev/$dev" | tail -n +2
+    done
+    separar yellow
+}
+
+# -----------------------------------------------------------------------------
+# Inicio del proceso interactivo
+# -----------------------------------------------------------------------------
+separar blue
 texColor "========== 🛠️ Formatear USB ==========" blue
-printf "\n\n"
+separar blue
+printf "\n"
 
-# Mostrar información de dispositivos de almacenamiento
-texColor "Ver ruta del pendrive" yellow
-texColor "[Presiona ENTER para continuar]" green
-read -r enterKey
-sudo lsblk | grep sd
-texColor '▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄' green
-printf "\n\n"
+# Mostrar información de dispositivos de almacenamiento separados por categoría
+mostrar_dispositivos
+printf "\n"
 
-# Solicitar la ruta del dispositivo a desmontar
-texColor "Escribe la ruta del pendrive para desmontar (ej. sdb1): " yellow
-read -r ruta
+# Solicitar la ruta del dispositivo
+texColor "Escribe la ruta o nombre de la partición/pendrive (ej. sdb1 o /dev/sdb1): " yellow
+read -r entrada_ruta
 
-# Validar que la ruta no esté vacía y exista
-if [[ -z "$ruta" || ! -e "/dev/$ruta" ]]; then
-    texColor "❌ Ruta no válida o el dispositivo no existe." red
+# Normalizar la ruta (sdb1 -> /dev/sdb1)
+dev_path="/dev/${entrada_ruta#/dev/}"
+
+# Validar que la ruta no esté vacía y sea un dispositivo de bloque válido
+if [[ -z "$entrada_ruta" || ! -b "$dev_path" ]]; then
+    texColor "❌ El dispositivo '$dev_path' no existe o no es un bloque válido." red
     exit 1
 fi
 
-# Desmontar el dispositivo
-sudo umount "/dev/$ruta"
-if [[ $? -ne 0 ]]; then
-    texColor "❌ Error al desmontar el dispositivo." red
+# -----------------------------------------------------------------------------
+# Protección de seguridad: Evitar formatear el sistema raíz o particiones del SO
+# -----------------------------------------------------------------------------
+puntos_montaje=$(lsblk -no MOUNTPOINTS "$dev_path" 2>/dev/null)
+if echo "$puntos_montaje" | grep -qE '^/($|boot|home)'; then
+    texColor "⛔ ERROR DE SEGURIDAD: El dispositivo '$dev_path' está montado en particiones críticas ($puntos_montaje)." red
+    texColor "No se permite formatear el disco del sistema operativo." red
     exit 1
 fi
 
-# Solicitar el nombre del USB
-texColor "Escribe el nombre del USB: " yellow
+# Advertencia adicional si selecciona un disco interno no removible
+is_removable=$(lsblk -d -n -o RM,TRAN "$dev_path" 2>/dev/null | awk '$1=="1" || $2=="usb"')
+if [[ -z "$is_removable" ]]; then
+    parent_dev=$(lsblk -n -o PKNAME "$dev_path" 2>/dev/null)
+    if [[ -n "$parent_dev" ]]; then
+        is_removable=$(lsblk -d -n -o RM,TRAN "/dev/$parent_dev" 2>/dev/null | awk '$1=="1" || $2=="usb"')
+    fi
+fi
+
+if [[ -z "$is_removable" ]]; then
+    texColor "⚠️ ADVERTENCIA: '$dev_path' parece ser un disco INTERNO/FIJO, no un pendrive USB extraíble." yellow
+fi
+
+# -----------------------------------------------------------------------------
+# Desmontar dispositivo si está montado
+# -----------------------------------------------------------------------------
+if lsblk -no MOUNTPOINTS "$dev_path" | grep -q .; then
+    texColor "➜ Desmontando '$dev_path'..." yellow
+    umount "$dev_path" 2>/dev/null
+    if [[ $? -ne 0 ]]; then
+        texColor "❌ No se pudo desmontar '$dev_path'. Asegúrate de que no esté en uso por otra aplicación." red
+        exit 1
+    fi
+    texColor "✓ Dispositivo desmontado correctamente." green
+fi
+
+# Solicitar el nombre/etiqueta para el USB
+printf "\n"
+texColor "Escribe el nombre/etiqueta para el USB (ej. MI_USB): " yellow
 read -r nombre
+if [[ -z "$nombre" ]]; then
+    nombre="USB"
+fi
 
 # Selección del formato
-texColor "Selecciona el formato (1)NTFS (2)FAT32: " yellow
-read -r opcion
+printf "\n"
+texColor "Selecciona el sistema de archivos:" yellow
+echo "  1) FAT32 (Compatibilidad universal)"
+echo "  2) NTFS  (Windows / Archivos >4GB)"
+echo "  3) exFAT (Windows/Mac/Linux / Archivos >4GB)"
+echo "  4) ext4  (Nativo de Linux)"
+printf "\n"
+read -p "Opción [1-4]: " opcion
 
 case $opcion in
     1)
-        sudo mkfs.ntfs -f -L "$nombre" "/dev/$ruta"
-        if [[ $? -eq 0 ]]; then
-            texColor "✅ Formateo a NTFS completado." green
-        else
-            texColor "❌ Error al formatear a NTFS." red
+        # Limitar etiqueta a 11 caracteres para FAT32
+        label_fat="${nombre:0:11}"
+        tool="mkfs.vfat"
+        if ! command -v "$tool" &>/dev/null; then
+            texColor "❌ Error: La herramienta '$tool' no está instalada en el sistema." red
             exit 1
         fi
+        cmd_exec() { mkfs.vfat -F 32 -n "$label_fat" "$dev_path"; }
+        tipo_fs="FAT32"
         ;;
     2)
-        sudo mkfs.vfat -F 32 -n "$nombre" "/dev/$ruta"
-        if [[ $? -eq 0 ]]; then
-            texColor "✅ Formateo a FAT32 completado." green
-        else
-            texColor "❌ Error al formatear a FAT32." red
+        tool="mkfs.ntfs"
+        if ! command -v "$tool" &>/dev/null; then
+            texColor "❌ Error: La herramienta '$tool' no está instalada en el sistema." red
             exit 1
         fi
+        cmd_exec() { mkfs.ntfs -f -L "$nombre" "$dev_path"; }
+        tipo_fs="NTFS"
+        ;;
+    3)
+        tool="mkfs.exfat"
+        if ! command -v "$tool" &>/dev/null; then
+            texColor "❌ Error: La herramienta '$tool' no está instalada en el sistema." red
+            exit 1
+        fi
+        cmd_exec() { mkfs.exfat -n "$nombre" "$dev_path"; }
+        tipo_fs="exFAT"
+        ;;
+    4)
+        tool="mkfs.ext4"
+        if ! command -v "$tool" &>/dev/null; then
+            texColor "❌ Error: La herramienta '$tool' no está instalada en el sistema." red
+            exit 1
+        fi
+        cmd_exec() { mkfs.ext4 -F -L "$nombre" "$dev_path"; }
+        tipo_fs="ext4"
         ;;
     *)
         texColor "❌ Opción no válida." red
@@ -70,5 +235,41 @@ case $opcion in
         ;;
 esac
 
-printf "\n\n"
-texColor '▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄' green
+# -----------------------------------------------------------------------------
+# Confirmación final de seguridad
+# -----------------------------------------------------------------------------
+printf "\n"
+separar red
+texColor "⚠️  ¡ADVERTENCIA DE SEGURIDAD!" red
+texColor "Se va a formatear el dispositivo: $dev_path" red
+texColor "Sistema de archivos: $tipo_fs | Etiqueta: $nombre" red
+texColor "TODOS LOS DATOS EN $dev_path SERÁN BORRADOS PERMANENTEMENTE." red
+separar red
+printf "\n"
+
+read -p "¿Estás completamente seguro de que deseas continuar? [s/N]: " confirmacion
+if [[ ! "$confirmacion" =~ ^[sS]$ ]]; then
+    texColor "Operación cancelada. No se han realizado cambios." yellow
+    exit 0
+fi
+
+# -----------------------------------------------------------------------------
+# Ejecutar formateo
+# -----------------------------------------------------------------------------
+printf "\n"
+texColor "➜ Formateando $dev_path a $tipo_fs..." yellow
+
+cmd_exec
+if [[ $? -eq 0 ]]; then
+    printf "\n"
+    texColor "✅ Formateo a $tipo_fs completado con éxito en '$dev_path'." green
+else
+    printf "\n"
+    texColor "❌ Ocurrió un error al formatear '$dev_path'." red
+    exit 1
+fi
+
+printf "\n"
+separar green
+
+

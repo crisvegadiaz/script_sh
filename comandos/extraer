@@ -1,7 +1,28 @@
 #!/bin/bash
 # Colocar en: /usr/bin
 
-source textoColor.sh
+# -----------------------------------------------------------------------------
+# Carga dinámica de textoColor.sh con fallback seguro
+# -----------------------------------------------------------------------------
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+if [ -f "$SCRIPT_DIR/textoColor.sh" ]; then
+    source "$SCRIPT_DIR/textoColor.sh"
+elif [ -f "/usr/bin/textoColor.sh" ]; then
+    source "/usr/bin/textoColor.sh"
+else
+    # Fallback en caso de que textoColor.sh no esté accesible
+    function texColor() {
+        local mensaje="$1"
+        local tipo="$2"
+        declare -A colores=([red]=31 [green]=32 [yellow]=33 [blue]=34 [purple]=35)
+        if [[ -n ${colores[$tipo]} ]]; then
+            echo -e "\e[${colores[$tipo]}m${mensaje}\e[0m"
+        else
+            echo "$mensaje"
+        fi
+    }
+fi
 
 # Función para imprimir líneas de separación
 function separar() {
@@ -9,75 +30,181 @@ function separar() {
     texColor "-------------------------------------------" "$color"
 }
 
-# Extracción de archivos
-if [ $# -ne 0 ]; then
+# -----------------------------------------------------------------------------
+# Ayuda y uso
+# -----------------------------------------------------------------------------
+function mostrar_ayuda() {
     separar blue
-    texColor "📁 Extracción de archivos" blue
+    texColor "📁 Script de Extracción de Archivos" blue
     separar blue
-    printf "\n\n"
+    echo "Uso: extraer <archivo1> [archivo2 ...]"
+    echo ""
+    echo "Ejemplos de uso:"
+    echo "  • Extraer un archivo individual:"
+    echo "      extraer archivo.zip"
+    echo "      extraer proyecto.tar.gz"
+    echo ""
+    echo "  • Extraer múltiples archivos a la vez:"
+    echo "      extraer archivo1.zip archivo2.tar.gz fotos.rar"
+    echo ""
+    echo "  • Extraer todos los comprimidos de una carpeta (comodín):"
+    echo "      extraer *.zip"
+    echo "      extraer *.tar.gz"
+    echo ""
+    echo "Formatos soportados:"
+    echo "  • tar.bz2, tbz2, tbz    (tar)"
+    echo "  • tar.gz, tgz           (tar)"
+    echo "  • tar.xz, txz           (tar)"
+    echo "  • tar.zst, tzst         (tar)"
+    echo "  • tar, tar.lzma         (tar)"
+    echo "  • bz2                   (bunzip2)"
+    echo "  • gz                    (gunzip)"
+    echo "  • xz                    (unxz)"
+    echo "  • zst                   (zstd)"
+    echo "  • rar                   (unrar / 7z)"
+    echo "  • zip                   (unzip)"
+    echo "  • 7z                    (7z / 7za)"
+    echo "  • Z                     (uncompress)"
+    echo "  • deb, ar               (ar)"
+    echo "  • iso                   (7z)"
+    separar blue
+}
+
+if [ $# -eq 0 ] || [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
+    mostrar_ayuda
+    exit 0
+fi
+
+# -----------------------------------------------------------------------------
+# Verificación de herramientas necesarias
+# -----------------------------------------------------------------------------
+function requerir_comando() {
+    local cmd="$1"
+    if ! command -v "$cmd" &>/dev/null; then
+        texColor "✗ Error: El comando '$cmd' no está instalado en el sistema." red
+        return 1
+    fi
+    return 0
+}
+
+# -----------------------------------------------------------------------------
+# Procesamiento de archivos
+# -----------------------------------------------------------------------------
+shopt -s nocasematch
+
+separar blue
+texColor "📁 Extracción de archivo(s)" blue
+separar blue
+printf "\n"
+
+hubo_error=0
+
+for archivo in "$@"; do
+    if [ ! -e "$archivo" ]; then
+        texColor "✗ El archivo '$archivo' no existe." red
+        separar red
+        printf "\n"
+        hubo_error=1
+        continue
+    fi
+
+    if [ ! -f "$archivo" ]; then
+        texColor "✗ '$archivo' no es un archivo regular válido." red
+        separar red
+        printf "\n"
+        hubo_error=1
+        continue
+    fi
+
+    texColor "➜ Extrayendo '$archivo'..." yellow
     
-    case $1 in
-        *.tar.bz2)
-            texColor "Extrayendo $1 con tar.bz2..." yellow
-            tar xvjf "$1"
+    local_status=0
+    case "$archivo" in
+        *.tar.bz2|*.tbz2|*.tbz)
+            requerir_comando tar && tar xvjf "$archivo"
+            local_status=$?
         ;;
-        *.tar.gz)
-            texColor "Extrayendo $1 con tar.gz..." yellow
-            tar xvzf "$1"
+        *.tar.gz|*.tgz)
+            requerir_comando tar && tar xvzf "$archivo"
+            local_status=$?
         ;;
-        *.tar.xz)
-            texColor "Extrayendo $1 con tar.xz..." yellow
-            tar xf "$1"
+        *.tar.xz|*.txz)
+            requerir_comando tar && tar xf "$archivo"
+            local_status=$?
+        ;;
+        *.tar.zst|*.tzst)
+            requerir_comando tar && tar --zstd -xvf "$archivo"
+            local_status=$?
+        ;;
+        *.tar|*.tar.lzma)
+            requerir_comando tar && tar xvf "$archivo"
+            local_status=$?
         ;;
         *.bz2)
-            texColor "Extrayendo $1 con bunzip2..." yellow
-            bunzip2 "$1"
+            requerir_comando bunzip2 && bunzip2 -k "$archivo"
+            local_status=$?
         ;;
         *.rar)
-            texColor "Extrayendo $1 con unrar..." yellow
-            unrar x "$1"
+            if command -v unrar &>/dev/null; then
+                unrar x "$archivo"
+            elif command -v 7z &>/dev/null; then
+                7z x "$archivo"
+            else
+                requerir_comando unrar
+            fi
+            local_status=$?
         ;;
         *.gz)
-            texColor "Extrayendo $1 con gunzip..." yellow
-            gunzip "$1"
-        ;;
-        *.tar)
-            texColor "Extrayendo $1 con tar..." yellow
-            tar xvf "$1"
-        ;;
-        *.tbz2)
-            texColor "Extrayendo $1 con tar.bz2..." yellow
-            tar xvjf "$1"
-        ;;
-        *.tgz)
-            texColor "Extrayendo $1 con tar.gz..." yellow
-            tar xvzf "$1"
+            requerir_comando gunzip && gunzip -k "$archivo"
+            local_status=$?
         ;;
         *.zip)
-            texColor "Extrayendo $1 con unzip..." yellow
-            unzip "$1"
+            requerir_comando unzip && unzip "$archivo"
+            local_status=$?
         ;;
         *.Z)
-            texColor "Extrayendo $1 con uncompress..." yellow
-            uncompress "$1"
+            requerir_comando uncompress && uncompress "$archivo"
+            local_status=$?
         ;;
         *.7z)
-            texColor "Extrayendo $1 con 7z..." yellow
-            7z x "$1"
+            if command -v 7z &>/dev/null; then
+                7z x "$archivo"
+            else
+                requerir_comando 7za && 7za x "$archivo"
+            fi
+            local_status=$?
+        ;;
+        *.xz)
+            requerir_comando unxz && unxz -k "$archivo"
+            local_status=$?
+        ;;
+        *.zst)
+            requerir_comando zstd && zstd -d -k "$archivo"
+            local_status=$?
+        ;;
+        *.deb|*.ar)
+            requerir_comando ar && ar x "$archivo"
+            local_status=$?
+        ;;
+        *.iso)
+            requerir_comando 7z && 7z x "$archivo"
+            local_status=$?
         ;;
         *)
-            texColor "✗ No se puede extraer el archivo ${1}." red
-            separar red
-            exit 1
+            texColor "✗ No se reconoce el formato de compresión para '$archivo'." red
+            local_status=1
         ;;
     esac
-    
+
     printf "\n"
-    separar green
-    texColor "√ Extracción finalizada correctamente." green
-    separar green
-else
-    separar red
-    texColor "✗ Debe proporcionar un archivo para extraer." red
-    separar red
-fi
+    if [ $local_status -eq 0 ]; then
+        texColor "✓ Extracción de '$archivo' finalizada correctamente." green
+        separar green
+    else
+        texColor "✗ Ocurrió un error al extraer '$archivo'." red
+        separar red
+    fi
+    printf "\n"
+done
+
+exit $hubo_error
