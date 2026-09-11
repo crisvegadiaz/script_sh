@@ -1,0 +1,169 @@
+#!/bin/bash
+# Colocar en: /usr/bin
+
+# -----------------------------------------------------------------------------
+# Carga dinámica de textoColor.sh con fallback seguro
+# -----------------------------------------------------------------------------
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+
+if [ -f "$SCRIPT_DIR/textoColor.sh" ]; then
+    source "$SCRIPT_DIR/textoColor.sh"
+elif [ -f "/usr/bin/textoColor.sh" ]; then
+    source "/usr/bin/textoColor.sh"
+elif [ -f "/usr/local/bin/textoColor.sh" ]; then
+    source "/usr/local/bin/textoColor.sh"
+else
+    function texColor() {
+        local mensaje="$1"
+        local tipo="$2"
+        declare -A colores=([red]=31 [rojo]=31 [green]=32 [verde]=32 [yellow]=33 [amarillo]=33 [blue]=34 [azul]=34 [purple]=35 [morado]=35 [white]=37 [blanco]=37)
+        if [[ -n ${colores[$tipo]} ]]; then
+            echo -e "\e[${colores[$tipo]}m${mensaje}\e[0m"
+        else
+            echo "$mensaje"
+        fi
+    }
+fi
+
+# Trapear interrupción de usuario (Ctrl+C)
+trap 'echo -e "\n\nOperación cancelada por el usuario."; exit 0' INT
+
+# -----------------------------------------------------------------------------
+# Ayuda y uso
+# -----------------------------------------------------------------------------
+function mostrar_ayuda() {
+    texColor "----------------------------------------------------------------------" azul
+    texColor "🧹 Script para Limpieza de Memoria RAM y Swap" azul
+    texColor "----------------------------------------------------------------------" azul
+    echo "Uso: ram [opciones]"
+    echo ""
+    echo "Descripción:"
+    echo "  Libera la memoria caché del sistema (pagecache, dentries e inodes)"
+    echo "  y reinicia la memoria Swap de forma segura."
+    echo ""
+    echo "Opciones:"
+    echo "  -h, --help    Muestra esta ayuda"
+    echo ""
+    texColor "----------------------------------------------------------------------" azul
+}
+
+if [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
+    mostrar_ayuda
+    exit 0
+fi
+
+# -----------------------------------------------------------------------------
+# Verificar y solicitar privilegios de superusuario (sudo)
+# -----------------------------------------------------------------------------
+if [[ $EUID -ne 0 ]]; then
+    if [ -t 0 ]; then
+        texColor "🔐 Este script requiere privilegios de superusuario." amarillo
+        texColor "Solicitando sudo..." azul
+        exec sudo "$0" "$@"
+    else
+        texColor "❌ Este script debe ejecutarse con privilegios de superusuario (sudo ram)." rojo
+        exit 1
+    fi
+fi
+
+# -----------------------------------------------------------------------------
+# Funciones auxiliares para medir memoria
+# -----------------------------------------------------------------------------
+obtener_datos_memoria() {
+    awk '
+    /MemTotal:/     { total=$2 }
+    /MemAvailable:/ { avail=$2 }
+    /SwapTotal:/    { stotal=$2 }
+    /SwapFree:/     { sfree=$2 }
+    END {
+        swap_used = stotal - sfree
+        if (swap_used < 0) swap_used = 0
+        print total, avail, swap_used, stotal
+    }' /proc/meminfo
+}
+
+formatear_kb() {
+    local kb=$1
+    awk -v kb="$kb" 'BEGIN {
+        if (kb >= 1048576) {
+            printf "%.2f GB", kb / 1048576
+        } else {
+            printf "%.1f MB", kb / 1024
+        }
+    }'
+}
+
+# Encabezado
+clear 2>/dev/null || true
+texColor "+---------------------------------------------------+" azul
+texColor "|           🧹 LIMPIEZA DE MEMORIA RAM Y SWAP       |" verde
+texColor "+---------------------------------------------------+" azul
+printf "\n"
+
+# Medición inicial
+read -r MEM_TOTAL_KB MEM_AVAIL_ANTES SWAP_USED_ANTES SWAP_TOTAL_KB <<< "$(obtener_datos_memoria)"
+
+texColor "📊 Estado de la memoria ANTES de la limpieza:" azul
+free -h
+printf "\n"
+
+# -----------------------------------------------------------------------------
+# Paso 1: Sincronización y Limpieza de Caché
+# -----------------------------------------------------------------------------
+texColor "➜ Sincronizando datos pendientes en disco (sync)..." amarillo
+sync
+
+texColor "➜ Limpiando la memoria caché (pagecache, dentries e inodes)..." amarillo
+echo 3 > /proc/sys/vm/drop_caches
+texColor "✅ Memoria caché limpiada correctamente." verde
+printf "\n"
+
+# -----------------------------------------------------------------------------
+# Paso 2: Limpieza de Memoria Swap con verificación de seguridad
+# -----------------------------------------------------------------------------
+read -r _ MEM_AVAIL_ACTUAL SWAP_USED_ACTUAL _ <<< "$(obtener_datos_memoria)"
+
+if (( SWAP_TOTAL_KB > 0 && SWAP_USED_ACTUAL > 0 )); then
+    texColor "➜ Evaluando espacio para reiniciar Swap..." amarillo
+
+    # Si la memoria swap usada es mayor que la RAM disponible, no es seguro hacer swapoff
+    if (( SWAP_USED_ACTUAL >= MEM_AVAIL_ACTUAL )); then
+        STR_SWAP=$(formatear_kb "$SWAP_USED_ACTUAL")
+        STR_RAM=$(formatear_kb "$MEM_AVAIL_ACTUAL")
+        texColor "⚠️ ADVERTENCIA: La Swap usada ($STR_SWAP) supera la RAM disponible ($STR_RAM)." rojo
+        texColor "   Se omite el reinicio de Swap para evitar agotar la memoria del sistema." amarillo
+    else
+        texColor "➜ Reiniciando la memoria swap (swapoff && swapon)..." amarillo
+        if swapoff -a && swapon -a; then
+            texColor "✅ Memoria swap reiniciada correctamente." verde
+        else
+            texColor "❌ Ocurrió un inconveniente al reiniciar Swap." rojo
+        fi
+    fi
+else
+    texColor "ℹ️ Memoria Swap no está en uso o no está configurada. Se omite reinicio de Swap." azul
+fi
+
+printf "\n"
+
+# -----------------------------------------------------------------------------
+# Resumen y Estado Final
+# -----------------------------------------------------------------------------
+read -r _ MEM_AVAIL_DESPUES SWAP_USED_DESPUES _ <<< "$(obtener_datos_memoria)"
+
+DIFERENCIA_KB=$(( MEM_AVAIL_DESPUES - MEM_AVAIL_ANTES ))
+
+texColor "📊 Estado de la memoria DESPUÉS de la limpieza:" azul
+free -h
+printf "\n"
+
+texColor "+---------------------------------------------------+" verde
+if (( DIFERENCIA_KB > 0 )); then
+    STR_LIBERADA=$(formatear_kb "$DIFERENCIA_KB")
+    texColor "🎉 Se liberó aproximadamente: $STR_LIBERADA de memoria RAM." verde
+else
+    texColor "ℹ️ La memoria RAM ya se encontraba optimizada." verde
+fi
+texColor "✔️ Operación completada con éxito." verde
+texColor "+---------------------------------------------------+" verde
+

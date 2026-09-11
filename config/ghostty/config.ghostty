@@ -1,0 +1,30 @@
+# Tipografía
+font-size = 12
+
+# Tema visual automático (Sintaxis corregida)
+config-file = ?auto/theme.ghostty
+
+# Legibilidad (1.0 deshabilita el ajuste forzado)
+minimum-contrast = 1.0
+
+# Transparencia y efectos visuales (Ghostty usa background-blur-radius)
+background-opacity = 0.85
+background-blur-radius = 20
+
+# Opciones de celda y cursor
+cursor-style = block
+adjust-cell-height = 10%
+
+# Atajos de teclado (Keybinds)
+keybind = ctrl+alt+d=new_split:down
+keybind = ctrl+alt+r=new_split:right
+
+# Tamaño por defecto de la ventana (Columnas x Filas)
+window-width = 110
+window-height = 28
+
+# Habilita el clic con tecla modificadora para abrir enlaces (activado por defecto)
+mouse-shift-capture = true
+
+# Define la tecla modificadora requerida junto con el clic (opciones: ctrl, shift, alt, super)
+# Por defecto requiere mantener presionado Ctrl (o Cmd en macOS)

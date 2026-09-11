@@ -1,0 +1,136 @@
+#!/bin/bash
+# Colocar en: /usr/bin
+
+# Trapear interrupción de usuario (Ctrl+C)
+trap 'echo -e "\n\nOperación cancelada por el usuario."; exit 0' INT
+
+# Cargar la librería de colores de forma dinámica con respaldo (fallback)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+if [[ -f "$SCRIPT_DIR/textoColor.sh" ]]; then
+    source "$SCRIPT_DIR/textoColor.sh"
+elif [[ -f "/usr/bin/textoColor.sh" ]]; then
+    source "/usr/bin/textoColor.sh"
+elif [[ -f "/usr/local/bin/textoColor.sh" ]]; then
+    source "/usr/local/bin/textoColor.sh"
+else
+    # Fallback si no existe textoColor.sh
+    texColor() {
+        echo "$1"
+    }
+fi
+
+# Función para verificar si hay un apagado/reinicio programado en systemd
+mostrar_apagado_programado() {
+    if [[ -f /run/systemd/shutdown/scheduled ]]; then
+        texColor "⚠️  Existe un apagado/reinicio actualmente programado." amarillo
+    fi
+}
+
+# Encabezado
+clear 2>/dev/null || true
+texColor "+-------------------------------------------+" azul
+texColor "|             ⏰ PROGRAMAR APAGADO          |" verde
+texColor "+-------------------------------------------+" azul
+texColor "Fecha y hora actual: $(date '+%Y-%m-%d %H:%M:%S')" azul
+printf "\n"
+
+mostrar_apagado_programado
+
+# Menú principal
+texColor "Seleccione una opción:" amarillo
+texColor "  1) 🔌 Apagar el sistema" blanco
+texColor "  2) 🔄 Reiniciar el sistema" blanco
+texColor "  3) 🚫 Cancelar apagado/reinicio programado" blanco
+texColor "  4) ❌ Salir" blanco
+printf "\n"
+read -r -p "Opción [1-4]: " opcion
+
+case $opcion in
+    1|2)
+        if [[ "$opcion" -eq 1 ]]; then
+            ACCION="Apagar"
+            MODO="-h"
+            VERBO="apagará"
+        else
+            ACCION="Reiniciar"
+            MODO="-r"
+            VERBO="reiniciará"
+        fi
+        
+        printf "\n"
+        texColor "Formatos válidos para la hora:" azul
+        texColor "  • HH:MM  (Ej: 22:30)" blanco
+        texColor "  • +m     (Ej: +15 para 15 minutos, o solo 15)" blanco
+        texColor "  • now    (Ej: now o ya para apagar inmediatamente)" blanco
+        printf "\n"
+
+        while true; do
+            read -r -p "Ingrese la hora/tiempo para $ACCION: " entrada_hora
+            entrada_hora=$(echo "$entrada_hora" | xargs 2>/dev/null || echo "$entrada_hora")
+
+            if [[ -z "$entrada_hora" ]]; then
+                texColor "❌ La hora no puede estar vacía. Intente nuevamente." rojo
+                continue
+            fi
+
+            # Validar formatos
+            if [[ "$entrada_hora" =~ ^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$ ]]; then
+                HORA_FINAL="$entrada_hora"
+                DESCRIPCION="a las $HORA_FINAL"
+                break
+            elif [[ "$entrada_hora" =~ ^\+?[0-9]+$ ]]; then
+                if [[ "$entrada_hora" =~ ^[0-9]+$ ]]; then
+                    HORA_FINAL="+$entrada_hora"
+                else
+                    HORA_FINAL="$entrada_hora"
+                fi
+                DESCRIPCION="en ${HORA_FINAL#+} minuto(s)"
+                break
+            elif [[ "$entrada_hora" =~ ^(now|ya)$ ]]; then
+                HORA_FINAL="now"
+                DESCRIPCION="inmediatamente"
+                break
+            else
+                texColor "❌ Formato no válido ('$entrada_hora'). Ejemplo: 23:30, +15, 10 o now." rojo
+            fi
+        done
+
+        # Confirmación
+        printf "\n"
+        read -r -p "¿Confirma programar $ACCION $DESCRIPCION? [S/n]: " confirmacion
+        confirmacion=${confirmacion:-S}
+
+        if [[ "$confirmacion" =~ ^[SsYy]$ ]]; then
+            MSJ="⚠️ Guarde su trabajo, la PC se $VERBO $DESCRIPCION."
+            if sudo shutdown "$MODO" "$HORA_FINAL" "$MSJ"; then
+                texColor "✅ $ACCION programado exitosamente ($DESCRIPCION)." verde
+            else
+                texColor "❌ Error al ejecutar el comando shutdown." rojo
+            fi
+        else
+            texColor "ℹ️ Operación cancelada por el usuario." amarillo
+        fi
+        ;;
+
+    3)
+        printf "\n"
+        if sudo shutdown -c; then
+            texColor "✅ Apagado/reinicio programado cancelado exitosamente." verde
+        else
+            texColor "❌ No se pudo cancelar o no había ninguna programación activa." rojo
+        fi
+        ;;
+
+    4)
+        texColor "👋 Saliendo..." azul
+        exit 0
+        ;;
+
+    *)
+        texColor "❌ OPCIÓN NO VÁLIDA. Intente nuevamente." rojo
+        exit 1
+        ;;
+esac
+
+texColor "---------------------------------------------" azul
+
